@@ -1,6 +1,8 @@
 #include "echo_packet.h"
 #include <arpa/inet.h>
-#include <stddef.h>
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 // The checksum is the 16-bit ones's complement of the one's
@@ -10,39 +12,40 @@
 // octet of zeros for computing the checksum.  This checksum may be
 // replaced in the future.
 
-// https://www.tutorialspoint.com/article/c-program-to-implement-checksum
-// https://stackoverflow.com/questions/52980000/calculating-a-16-bit-checksum
-static unsigned short calculate_checksum(const char *data, size_t len) {
-  if (len == 0) {
-    return 0;
+static unsigned short calculate_checksum(const void *data, size_t len) {
+  const unsigned short *ptr = (const unsigned short *)data;
+  unsigned int sum = 0;
+
+  while (len > 1) {
+    sum += *ptr++;
+    len -= 2;
   }
 
-  const unsigned char *ptr = (const unsigned char *)data;
-  size_t even_len = len - len % 2;
-
-  unsigned int chsm = 0;
-
-  size_t i;
-  for (i = 0; i < even_len; i += 2) {
-    chsm += ((unsigned int)ptr[i] << 8) | (unsigned int)ptr[i + 1];
+  if (len == 1) {
+    unsigned short odd_byte = 0;
+    *(unsigned char *)(&odd_byte) = *(const unsigned char *)ptr;
+    sum += odd_byte;
   }
 
-  if (i < len) {
-    chsm += ((unsigned int)ptr[i] << 8);
+  while (sum >> 16) {
+    sum = (sum & 0xFFFF) + (sum >> 16);
   }
 
-  while (chsm >> 16) {
-    chsm = (chsm & 0xFFFF) + (chsm >> 16);
-  }
-
-  return (unsigned short)(~chsm);
+  return (unsigned short)(~sum);
 }
 
-void init_echo_message(Echo_Message *msg) {
-  memset(msg, 0, sizeof *msg);
-  msg->type = ICMP_ECHO_MESSAGE_TYPE;
-  msg->code = ICMP_ECHO_CODE;
-  msg->identifier = 0;
-  msg->sequence_number = 0;
-  msg->checksum = htons(calculate_checksum((char *)msg, sizeof *msg));
+void init_echo_message(Echo_Message *msg, const void *data, size_t data_size) {
+    size_t total_len = ICMP_HEADER_SIZE + data_size;
+
+    msg->type = ICMP_ECHO_MESSAGE_TYPE;
+    msg->code = ICMP_ECHO_CODE;
+    msg->checksum = 0;
+    msg->identifier = 0;
+    msg->sequence_number = 0;
+
+    if (data != NULL && data_size > 0) {
+        memcpy(msg->data, data, data_size);
+    }
+
+    msg->checksum = calculate_checksum(msg, total_len);
 }

@@ -14,9 +14,12 @@
 // |     Data ...
 // +-+-+-+-+-
 
+#include <stddef.h>
+
 #define ICMP_ECHO_MESSAGE_TYPE 8
 #define ICMP_ECHO_REPLY_TYPE 0
 #define ICMP_ECHO_CODE 0
+#define ICMP_HEADER_SIZE 8
 
 typedef struct {
   unsigned char type;
@@ -24,9 +27,9 @@ typedef struct {
   unsigned short checksum;
   unsigned short identifier;      // may be set to zero, as code is 0
   unsigned short sequence_number; // may be set to zero, as code is 0
-  // not adding data, as it's optional
-} Echo_Message;
+  unsigned char data[];
+} __attribute__((packed)) Echo_Message;
 
-void init_echo_message(Echo_Message *msg);
+void init_echo_message(Echo_Message *msg, const void *data, size_t data_size);
 
 #endif // ECHO_PACKET_H
