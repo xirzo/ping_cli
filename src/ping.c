@@ -26,7 +26,7 @@ void ping(int fd, char destination_ip[], const char text[]) {
     return;
   }
 
-  if ((receive_echo_reply(fd, addr)) == -1) {
+  if ((receive_echo_reply(fd)) == -1) {
     fprintf(stderr, "Failed to receive echo reply\n");
     return;
   }

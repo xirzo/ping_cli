@@ -74,15 +74,21 @@ int send_echo_message(int fd, struct sockaddr_in addr, const void *data,
   return 0;
 }
 
-int receive_echo_reply(int fd, struct sockaddr_in addr) {
+int receive_echo_reply(int fd) {
   // SAFETY IS NOT GUARANTEED
   // 😄😄😄😄😄😄😄😄😄😄😄😄😄😄😄
-  size_t peerlen = sizeof(addr);
+  struct sockaddr_in addr;
+  socklen_t peerlen = sizeof(addr);
   char buf[BUFFER_SIZE];
-  ssize_t n = recvfrom(fd, buf, BUFFER_SIZE, 0, (struct sockaddr *)&addr, (socklen_t*)&peerlen);
+  ssize_t n = recvfrom(fd, buf, BUFFER_SIZE, 0, (struct sockaddr *)&addr, &peerlen);
   if (n == -1) {
     int errnoc = errno;
     fprintf(stderr, "Failed to receive data: %s\n", strerror(errnoc));
+    return -1;
+  }
+
+  if (n < (ssize_t)sizeof(struct iphdr)) {
+    fprintf(stderr, "Reply packet's size is less than IPv4 header\n");
     return -1;
   }
 

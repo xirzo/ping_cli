@@ -36,6 +36,6 @@ typedef struct {
 int send_echo_message(int fd, struct sockaddr_in addr, const void *data,
                       size_t data_size);
 
-int receive_echo_reply(int fd, struct sockaddr_in addr);
+int receive_echo_reply(int fd);
 
 #endif // ECHO_PACKET_H
