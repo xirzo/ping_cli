@@ -1,5 +1,5 @@
 #ifndef PING_H
-#define ping_h
+#define PING_H
 
 void ping(int fd, char destination_ip[], const char text[]);
 

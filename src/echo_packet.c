@@ -1,6 +1,7 @@
 #include "echo_packet.h"
 #include <arpa/inet.h>
 #include <assert.h>
+#include <errno.h>
 #include <netinet/ip.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,6 +15,8 @@
 // If the total length is odd, the received data is padded with one
 // octet of zeros for computing the checksum.  This checksum may be
 // replaced in the future.
+
+#define BUFFER_SIZE 1512
 
 static unsigned short calculate_checksum(const void *data, size_t len) {
   const unsigned short *ptr = (const unsigned short *)data;
@@ -71,10 +74,36 @@ int send_echo_message(int fd, struct sockaddr_in addr, const void *data,
   return 0;
 }
 
-ssize_t receive_echo_reply(int fd, struct sockaddr_in addr, void *buf,
-                           size_t buf_size) {
+int receive_echo_reply(int fd, struct sockaddr_in addr) {
   // SAFETY IS NOT GUARANTEED
   // 😄😄😄😄😄😄😄😄😄😄😄😄😄😄😄
   size_t peerlen = sizeof(addr);
-  return recvfrom(fd, buf, buf_size, 0, (struct sockaddr *)&addr, (socklen_t*)&peerlen);
+  char buf[BUFFER_SIZE];
+  ssize_t n = recvfrom(fd, buf, BUFFER_SIZE, 0, (struct sockaddr *)&addr, (socklen_t*)&peerlen);
+  if (n == -1) {
+    int errnoc = errno;
+    fprintf(stderr, "Failed to receive data: %s\n", strerror(errnoc));
+    return -1;
+  }
+
+  struct iphdr *ip = (struct iphdr *)buf;
+  if (n < (ssize_t)(ip->ihl * 4 + ICMP_HEADER_SIZE)) {
+    fprintf(stderr, "Incorrect reply packet size\n");
+    return -1;
+  }
+  int data_len = (int)(n - (ip->ihl * 4 + ICMP_HEADER_SIZE));
+
+  Echo_Message *reply = (Echo_Message*)(buf + ip->ihl * 4);
+
+  if (reply->type != ICMP_ECHO_REPLY_TYPE){
+    fprintf(stderr, "Received a message, which is not a reply\n");
+    return -1;
+  }
+
+  // TODO: validate checksum / identifier
+
+  printf("%d\n", reply->type);
+  printf("%.*s\n", data_len, (char*)reply->data);
+
+  return 0;
 }

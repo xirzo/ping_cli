@@ -6,10 +6,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#define BUF_SIZE 512
-
 void ping(int fd, char destination_ip[], const char text[]) {
-  size_t data_size = sizeof(*text);
+  size_t data_size = strlen(text);
 
   struct sockaddr_in addr;
 
@@ -17,7 +15,7 @@ void ping(int fd, char destination_ip[], const char text[]) {
 
   addr.sin_family = AF_INET;
   if (inet_pton(AF_INET, destination_ip, &addr.sin_addr) <= 0) {
-    fprintf(stderr, "Invlid destination IP address\n");
+    fprintf(stderr, "Invalid destination IP address\n");
     return;
   }
   addr.sin_port = 0;
@@ -28,9 +26,8 @@ void ping(int fd, char destination_ip[], const char text[]) {
     return;
   }
 
-  char reply_buf[BUF_SIZE];
-
-  receive_echo_reply(fd, addr, reply_buf, BUF_SIZE);
-
-  printf("%s\n", reply_buf);
+  if ((receive_echo_reply(fd, addr)) == -1) {
+    fprintf(stderr, "Failed to receive echo reply\n");
+    return;
+  }
 }
