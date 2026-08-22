@@ -1,4 +1,4 @@
-#include "echo_packet.h"
+#include "ping.h"
 #include <arpa/inet.h>
 #include <errno.h>
 #include <netinet/in.h>
@@ -19,29 +19,7 @@ int main(void) {
     return EXIT_FAILURE;
   }
 
-  struct sockaddr_in addr;
-
-  memset(&addr, 0, sizeof addr);
-  addr.sin_family = AF_INET;
-  if (inet_pton(AF_INET, DESTINATION_IP, &addr.sin_addr) <= 0) {
-    fprintf(stderr, "Invalid IP address\n");
-    return EXIT_FAILURE;
-  }
-  addr.sin_port = htons(0);
-
-  char data[] = "Hello, World";
-  size_t data_size = sizeof(data);
-  size_t total_len = ICMP_HEADER_SIZE + data_size;
-
-  unsigned char buffer[total_len];
-  Echo_Message *msg = (Echo_Message *)buffer;
-
-  init_echo_message(msg, data, data_size);
-  if (sendto(fd, msg, total_len, 0, (struct sockaddr *)&addr, sizeof(addr)) ==
-      -1) {
-    perror("Failed to send packet");
-    return EXIT_FAILURE;
-  }
+  ping(fd, DESTINATION_IP, "Hello, World");
 
   return EXIT_SUCCESS;
 }

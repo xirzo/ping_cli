@@ -14,7 +14,9 @@
 // |     Data ...
 // +-+-+-+-+-
 
+#include <netinet/in.h>
 #include <stddef.h>
+#include <sys/types.h>
 
 #define ICMP_ECHO_MESSAGE_TYPE 8
 #define ICMP_ECHO_REPLY_TYPE 0
@@ -30,6 +32,11 @@ typedef struct {
   unsigned char data[];
 } __attribute__((packed)) Echo_Message;
 
-void init_echo_message(Echo_Message *msg, const void *data, size_t data_size);
+// data maybe set set to null. returns -1 on failure and sets errno
+int send_echo_message(int fd, struct sockaddr_in addr, const void *data,
+                      size_t data_size);
+
+ssize_t receive_echo_reply(int fd, struct sockaddr_in addr, void *buf,
+                           size_t buf_size);
 
 #endif // ECHO_PACKET_H

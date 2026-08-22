@@ -16,6 +16,7 @@ inc = include_directories('src/')
 sources = files(
   'src/main.c',
   'src/echo_packet.c',
+  'src/ping.c',
 )
 
 build_args = []
