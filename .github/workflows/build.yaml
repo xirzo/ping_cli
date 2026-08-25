@@ -1,0 +1,30 @@
+name: Build Release
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - v*.*.*
+
+jobs:
+  build-release:
+    name: Build Release
+    runs-on: ubuntu-latest
+    container:
+      image: node:26-slim
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install requirements
+        run: |
+          apt-get update && apt-get upgrade -y && \
+            apt-get install meson build-essential -y
+
+      - name: Configure
+        run: |
+          meson setup --buildtype=release build-release
+
+      - name: Build
+        run: |
+          meson compile -C build-release
