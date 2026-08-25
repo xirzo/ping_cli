@@ -13,13 +13,14 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: node:26-slim
+    
     steps:
       - uses: actions/checkout@v7
 
       - name: Install requirements
         run: |
           apt-get update && apt-get upgrade -y && \
-            apt-get install meson build-essential -y
+          apt-get install meson build-essential -y
 
       - name: Configure
         run: |
@@ -28,3 +29,18 @@ jobs:
       - name: Build
         run: |
           meson compile -C build-release
+
+      - name: Package artifact
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          mkdir -p release-artifacts
+          cp build-release/ping release-artifacts/
+          tar -czf ping-linux.tar.gz -C release-artifacts .
+          echo "ARTIFACT_PATH=ping-linux.tar.gz" >> $GITHUB_ENV
+
+      - name: Upload Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@v3
+        with:
+          name: ping-linux
+          path: ping-linux.tar.gz
